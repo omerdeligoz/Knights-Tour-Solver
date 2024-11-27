@@ -57,7 +57,8 @@ public class Main {
             System.out.println("d. Depth First Search with Node Selection Heuristic h2");
             System.out.print("Please enter the search strategy: ");
             strategyChoice = scanner.next().charAt(0);
-            if (strategyChoice == 'a' || strategyChoice == 'b' || strategyChoice == 'c' || strategyChoice == 'd') {
+            if (strategyChoice == 'a' || strategyChoice == 'b' || strategyChoice == 'c' || strategyChoice == 'd'
+                    || strategyChoice == 'A' || strategyChoice == 'B' || strategyChoice == 'C' || strategyChoice == 'D') {
                 break;
             }
             System.out.println("Invalid input. Please enter a valid strategy (a, b, c, or d).");
@@ -80,59 +81,45 @@ public class Main {
     }
 
     public static void treeSearch(char strategyChoice) {
-        Strategy strategy = null;
-        switch (strategyChoice) {
-            case 'a':
-                strategy = new BreadthFirstSearch();
-                break;
-            case 'b':
-                strategy = new DepthFirstSearch(DepthFirstSearch.HeuristicType.NO);
-                break;
-            case 'c':
-                strategy = new DepthFirstSearch(DepthFirstSearch.HeuristicType.H1B);
-                break;
-            case 'd':
-                strategy = new DepthFirstSearch(DepthFirstSearch.HeuristicType.H2);
-                break;
-        }
+        Strategy strategy = switch (strategyChoice) {
+            case 'a', 'A' -> new BreadthFirstSearch();
+            case 'b', 'B' -> new DepthFirstSearch(DepthFirstSearch.HeuristicType.NO);
+            case 'c', 'C' -> new DepthFirstSearch(DepthFirstSearch.HeuristicType.H1B);
+            case 'd', 'D' -> new DepthFirstSearch(DepthFirstSearch.HeuristicType.H2);
+            default -> null;
+        };
+        // Start the search from the root node
         Node root = new Node(1, 1, null);
 
-
-        // Create a ScheduledExecutorService to handle the timeout
-        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-        Strategy finalStrategy = strategy;
         System.out.println("Searching for a solution...");
         System.out.println("Started at: " + new SimpleDateFormat("HH:mm:ss").format(new Date()));
-        System.out.println("Time limit: " + timeLimit + " minutes");
         System.out.println("End time: " + new SimpleDateFormat("HH:mm:ss").format(new Date(System.currentTimeMillis() + (long) timeLimit * 60 * 1000)));
-        Future<?> future = scheduler.submit(() -> finalStrategy.solve(root));
 
+        // Create a thread for searching
+        Thread searchThread = new Thread(() -> {
+            assert strategy != null;
+            strategy.solve(root);
+        });
+
+        // Start the search thread
+        searchThread.start();
         try {
-            // Wait for the task to complete within the time limit
-            future.get(timeLimit, TimeUnit.MINUTES);
-        } catch (TimeoutException e) {
-            future.cancel(true); // Cancel the task
-            System.out.println("Timeout error: Execution time exceeded the time limit.");
-            System.exit(-2);
-        } catch (InterruptedException | ExecutionException e) {
-            e.printStackTrace();
-        } finally {
-            scheduler.shutdown();
+            // Wait for the specified time limit
+            searchThread.join(timeLimit * 60 * 1000L); // Convert minutes to milliseconds
+
+            // If thread is still alive after timeout, interrupt it
+            if (searchThread.isAlive()) {
+                searchThread.interrupt();
+                System.out.println("Timeout: Search exceeded the time limit of " + timeLimit + " minutes.");
+            }
+        } catch (InterruptedException e) {
+            System.out.println("Search was interrupted.");
         }
     }
 
-
-
-
-
     public static void printPath(Stack<Node> path) {
-        int cnt = 1;
         File file = new File("C:\\Users\\Cyber\\PycharmProjects\\PythonProject\\input.txt");
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
-//            for (String s : traversed) {
-//                writer.write(s);
-//                writer.newLine();
-//            }
             for (Node node : path) {
                 writer.write(node.x + "," + node.y);
                 writer.newLine();
@@ -140,9 +127,5 @@ public class Main {
         } catch (IOException e) {
             e.printStackTrace();
         }
-//        for (Node node : path) {
-//            System.out.print("->(" + node.x + "," + node.y + ")");
-//        }
-//        System.out.println();
     }
 }
