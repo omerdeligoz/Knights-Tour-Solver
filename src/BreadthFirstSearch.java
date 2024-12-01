@@ -1,6 +1,8 @@
 import java.util.*;
+import java.util.logging.Logger;
 
 public class BreadthFirstSearch implements Strategy {
+    Logger logger = Logger.getLogger(BreadthFirstSearch.class.getName());
     @Override
     public boolean solve(Node startNode) {
         Queue<Node> frontier = new LinkedList<>();
@@ -22,8 +24,7 @@ public class BreadthFirstSearch implements Strategy {
                 // Reverse the path to get the correct order from start to goal
                 Collections.reverse(path);
 
-                System.out.println("Solution found: ");
-                System.out.println("Nodes Expanded: " + Main.expandedNodes);
+                logger.info("Solution found. Nodes Expanded: " + Main.expandedNodes);
                 Main.printPath(path);
                 return true;
             }
@@ -34,12 +35,14 @@ public class BreadthFirstSearch implements Strategy {
                     frontier.add(child);
                     child.parent = selectedNode;
                     Main.expandedNodes++;
+                    if (Main.expandedNodes % 10000 == 0) {
+                        logger.info("Nodes Expanded: " + Main.expandedNodes);
+                    }
                 }
             }
         }
 
-        System.out.println("No solution found.");
-        System.out.println("Nodes Expanded: " + Main.expandedNodes);
+        logger.info("No solution found. Nodes Expanded: " + Main.expandedNodes);
         return false;
     }
 

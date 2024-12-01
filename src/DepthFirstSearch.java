@@ -1,13 +1,16 @@
 import java.util.*;
+import java.util.logging.Logger;
 
 class DepthFirstSearch implements Strategy {
+    Logger logger = Logger.getLogger(DepthFirstSearch.class.getName());
+
     public enum HeuristicType {
         NO,     // No heuristic
         H1B,    // Warnsdorff's method
         H2      // Improved heuristic
     }
 
-    private HeuristicType selectedHeuristic;
+    private final HeuristicType selectedHeuristic;
 
     public DepthFirstSearch(HeuristicType heuristicType) {
         this.selectedHeuristic = heuristicType;
@@ -25,8 +28,11 @@ class DepthFirstSearch implements Strategy {
         while (!path.isEmpty()) {
             Node selectedNode = path.peek();
             if (isGoal(path)) {
-                System.out.println("Solution found.");
-                System.out.println("Nodes Expanded: " + Main.expandedNodes);
+                if (Main.expandedNodes == Main.SIZE * Main.SIZE) {
+                    logger.info("Solution found without backtracking. Nodes Expanded: " + Main.expandedNodes);
+                } else {
+                    logger.info("Solution found with some backtracking. Nodes Expanded: " + Main.expandedNodes);
+                }
                 Main.printPath(path);
                 return true;
             }
@@ -38,6 +44,9 @@ class DepthFirstSearch implements Strategy {
                     path.push(child);
                     frontier.put(child, expand(child, path));
                     Main.expandedNodes++;
+                    if (Main.expandedNodes % 10000 == 0) {
+                        logger.info("Nodes Expanded: " + Main.expandedNodes);
+                    }
                 }
             } else {
                 path.pop();
@@ -45,8 +54,7 @@ class DepthFirstSearch implements Strategy {
                 frontier.remove(selectedNode);
             }
         }
-        System.out.println("No solution found.");
-        System.out.println("Nodes Expanded: " + Main.expandedNodes);
+        logger.info("No solution found. Nodes Expanded: " + Main.expandedNodes);
         return false;
     }
 
