@@ -3,8 +3,9 @@ import java.util.logging.Logger;
 
 public class BreadthFirstSearch implements Strategy {
     Logger logger = Logger.getLogger(BreadthFirstSearch.class.getName());
+
     @Override
-    public boolean solve(Node startNode) {
+    public boolean solve(Node startNode, long startTime) {
         Queue<Node> frontier = new LinkedList<>();
         Set<Node> visited = new HashSet<>();
         frontier.add(startNode);
@@ -12,6 +13,10 @@ public class BreadthFirstSearch implements Strategy {
         Main.expandedNodes++;
 
         while (!frontier.isEmpty()) {
+            if (System.currentTimeMillis() - startTime > Main.timeLimit * 60 * 1000L) {
+                logger.warning("Timeout: Search exceeded the time limit of " + Main.timeLimit + " minutes.");
+                return false;
+            }
             Node selectedNode = frontier.poll();
             visited.add(selectedNode);
 
@@ -24,7 +29,7 @@ public class BreadthFirstSearch implements Strategy {
                 // Reverse the path to get the correct order from start to goal
                 Collections.reverse(path);
 
-                logger.info("Solution found. Nodes Expanded: " + Main.expandedNodes);
+                logger.info("Solution found.");
                 Main.printPath(path);
                 return true;
             }
@@ -35,14 +40,11 @@ public class BreadthFirstSearch implements Strategy {
                     frontier.add(child);
                     child.parent = selectedNode;
                     Main.expandedNodes++;
-                    if (Main.expandedNodes % 10000 == 0) {
-                        logger.info("Nodes Expanded: " + Main.expandedNodes);
-                    }
                 }
             }
         }
 
-        logger.info("No solution found. Nodes Expanded: " + Main.expandedNodes);
+        logger.warning("No solution exists.");
         return false;
     }
 

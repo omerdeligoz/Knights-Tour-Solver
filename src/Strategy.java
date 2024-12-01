@@ -1,3 +1,3 @@
 interface Strategy {
-    boolean solve(Node startNode);
+    boolean solve(Node startNode, long startTime);
 }

@@ -17,7 +17,7 @@ class DepthFirstSearch implements Strategy {
     }
 
     @Override
-    public boolean solve(Node startNode) {
+    public boolean solve(Node startNode, long startTime) {
         Map<Node, Stack<Node>> frontier = new HashMap<>();
         Stack<Node> path = new Stack<>();
         Set<Node> visited = new HashSet<>();
@@ -26,12 +26,16 @@ class DepthFirstSearch implements Strategy {
         Main.expandedNodes++;
 
         while (!path.isEmpty()) {
+            if (System.currentTimeMillis() - startTime > Main.timeLimit * 60 * 1000L) {
+                logger.warning("Timeout: Search exceeded the time limit of " + Main.timeLimit + " minutes.");
+                return false;
+            }
             Node selectedNode = path.peek();
             if (isGoal(path)) {
                 if (Main.expandedNodes == Main.SIZE * Main.SIZE) {
-                    logger.info("Solution found without backtracking. Nodes Expanded: " + Main.expandedNodes);
+                    logger.info("Solution found without backtracking.");
                 } else {
-                    logger.info("Solution found with some backtracking. Nodes Expanded: " + Main.expandedNodes);
+                    logger.info("Solution found with some backtracking.");
                 }
                 Main.printPath(path);
                 return true;
@@ -44,9 +48,6 @@ class DepthFirstSearch implements Strategy {
                     path.push(child);
                     frontier.put(child, expand(child, path));
                     Main.expandedNodes++;
-                    if (Main.expandedNodes % 10000 == 0) {
-                        logger.info("Nodes Expanded: " + Main.expandedNodes);
-                    }
                 }
             } else {
                 path.pop();
@@ -54,7 +55,7 @@ class DepthFirstSearch implements Strategy {
                 frontier.remove(selectedNode);
             }
         }
-        logger.info("No solution found. Nodes Expanded: " + Main.expandedNodes);
+        logger.warning("No solution exists.");
         return false;
     }
 
