@@ -16,34 +16,30 @@ JAVA_BIN_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, '../../bin'))
 os.makedirs(JAVA_BIN_DIR, exist_ok=True)
 # Define the test cases as a list of dictionaries
 test_cases = [
-                ['165', 'd', '15'],
-                ['166', 'd', '15'],
-
 #             8, 16, 32, 41, and 52
-#                 ['8', 'a', '15'],   # Out of memory
-#                 ['16', 'a', '15'],  # Out of memory
-#                 ['32', 'a', '15'],  # Out of memory
-#                 ['41', 'a', '15'],  # Out of memory
-#                 ['52', 'a', '15'],  # Out of memory
-#
-#                 ['8', 'b', '15'],   # Timeout
-#                 ['16', 'b', '15'],  # Timeout
-#                 ['32', 'b', '15'],  # Timeout
-#                 ['41', 'b', '15'],  # Timeout
-#                 ['52', 'b', '15'],  # Timeout
-#
-#                 ['8', 'c', '15'],   # Success
-#                 ['16', 'c', '15'],  # Success
-#                 ['32', 'c', '15'],  # Success
-#                 ['41', 'c', '15'],  # Fail
-#                 ['52', 'c', '15'],  # Fail
-#
-#                 ['8', 'd', '15'],   # Success
-#                 ['16', 'd', '15'],  # Success
-#                 ['32', 'd', '15'],  # Success
-#                 ['41', 'd', '15'],  # Success
-#                 ['52', 'd', '15'],  # Success
+                ['8', '1', '15'],   # Out of memory
+                ['16', '1', '15'],  # Out of memory
+                ['32', '1', '15'],  # Out of memory
+                ['41', '1', '15'],  # Out of memory
+                ['52', '1', '15'],  # Out of memory
 
+                ['8', '2', '15'],   # Success
+                ['16', '2', '15'],  # Timeout
+                ['32', '2', '15'],  # Timeout
+                ['41', '2', '15'],  # Timeout
+                ['52', '2', '15'],  # Timeout
+
+                ['8', '3', '15'],   # Success
+                ['16', '3', '15'],  # Success
+                ['32', '3', '15'],  # Success
+                ['41', '3', '15'],  # Fail
+                ['52', '3', '15'],  # Fail
+
+                ['8', '4', '15'],   # Success
+                ['16', '4', '15'],  # Success
+                ['32', '4', '15'],  # Success
+                ['41', '4', '15'],  # Success
+                ['52', '4', '15'],  # Success
             ]
 
 def compile_java():

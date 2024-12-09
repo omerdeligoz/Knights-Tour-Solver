@@ -82,7 +82,7 @@ def generate_path_picture(coordinates):
     ax.plot([x_coords[-1]], [y_coords[-1]], marker='o', color='#FF4500', markersize=15)
 
     # Annotate each point with a colored number
-    for i, (x, y) in enumerate(coordinates):
+    for i, (y, x) in enumerate(coordinates):
         ax.text(
             x, y,
             f"{i + 1}",
@@ -97,8 +97,8 @@ def generate_path_picture(coordinates):
     # Draw directional arrows
     for i in range(len(coordinates) - 1):
         arrow = FancyArrowPatch(
-            (coordinates[i][0], coordinates[i][1]),
-            (coordinates[i + 1][0], coordinates[i + 1][1]),
+            (coordinates[i][1], coordinates[i][0]),
+            (coordinates[i + 1][1], coordinates[i + 1][0]),
             arrowstyle='->',
             color='#555555',
             mutation_scale=15,

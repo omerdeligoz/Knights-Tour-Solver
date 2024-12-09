@@ -1,35 +1,27 @@
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.io.BufferedWriter;
+import java.io.IOException;
 import java.util.logging.*;
+import java.io.FileWriter;
+import java.io.File;
+import java.util.*;
+
 
 public class Main {
-    public enum SearchStrategy {BFS, DFS, DFS_H1B, DFS_H2}
 
     private static final Logger logger = Logger.getLogger(Main.class.getName());
 
-    public static final int[][] MOVES = new int[][]{
-            {-2, 1},
-            {-1, 2},
-            {1, 2},
-            {2, 1},
-            {2, -1},
-            {1, -2},
-            {-1, -2},
-            {-2, -1},
-    };
-    public static int[][] board;
-    public static int expandedNodes = 0;
+
+    public static long expandedNodes = 0;
+    public static long createdNodes = 1;
 
     public static int startX = 1;
     public static int startY = 1;
 
     public static int SIZE;
-    public static SearchStrategy strategyChoice;
+    public static TreeSearch.Strategy strategy;
     public static int timeLimit;
+
 
     public static void main(String[] args) {
         configureLogging();
@@ -41,31 +33,20 @@ public class Main {
             timeLimit = Integer.parseInt(args[2]);
 
             // Parse search strategy
-            char choice = args[1].toLowerCase().charAt(0);
-            strategyChoice = switch (choice) {
-                case 'a' -> SearchStrategy.BFS;
-                case 'b' -> SearchStrategy.DFS;
-                case 'c' -> SearchStrategy.DFS_H1B;
-                case 'd' -> SearchStrategy.DFS_H2;
+            int choice = Integer.parseInt(args[1]);
+            strategy = switch (choice) {
+                case 1 -> TreeSearch.Strategy.BFS;
+                case 2 -> TreeSearch.Strategy.DFS;
+                case 3 -> TreeSearch.Strategy.DFS_H1B;
+                case 4 -> TreeSearch.Strategy.DFS_H2;
                 default -> throw new IllegalArgumentException("Invalid search strategy: " + args[1]);
             };
         }
-        board = new int[SIZE][SIZE];
-        logger.info("Starting search with board size " + SIZE + ", initial position (" + startX + ", " + startY + "), and strategy " + strategyChoice + " with time limit " + timeLimit + " minutes.");
-        treeSearch(strategyChoice);
-    }
-
-    public static void treeSearch(SearchStrategy strategyChoice) {
+        logger.info("Starting search with board size " + SIZE + ", initial position (" + startX + ", " + startY + "), and strategy " + strategy + " with time limit " + timeLimit + " minutes.");
+        TreeSearch treeSearch = new TreeSearch(strategy);
         long startTime = System.currentTimeMillis();
         try {
-            // Start the search from the root node
-            Node root = new Node(startX, startY, null);
-            switch (strategyChoice) {
-                case BFS -> (new BreadthFirstSearch()).solve(root, startTime);
-                case DFS -> (new DepthFirstSearch(DepthFirstSearch.HeuristicType.NO)).solve(root, startTime);
-                case DFS_H1B -> (new DepthFirstSearch(DepthFirstSearch.HeuristicType.H1B)).solve(root, startTime);
-                case DFS_H2 -> (new DepthFirstSearch(DepthFirstSearch.HeuristicType.H2)).solve(root, startTime);
-            }
+            treeSearch.solve(strategy, startX, startY, startTime);
         } catch (OutOfMemoryError e) {
             logger.warning("Out of memory error occurred: " + e.getMessage());
         } catch (Exception e) {
@@ -78,9 +59,11 @@ public class Main {
             long milliseconds = timeSpent % 1000;
             String formattedTime = String.format("%d.%02d.%03d", minutes, seconds, milliseconds);
             logger.info("Nodes Expanded: " + String.format("%,d", expandedNodes));
+            logger.info("Nodes Created: " + String.format("%,d", createdNodes));
             logger.info("Time spent: " + formattedTime);
         }
     }
+
 
     public static void getInputs() {
         Scanner scanner = new Scanner(System.in);
@@ -97,20 +80,24 @@ public class Main {
         }
 
         // Loop to get valid search strategy
-        while (strategyChoice == null) {
-            System.out.println("a. Breadth First Search");
-            System.out.println("b. Depth First Search");
-            System.out.println("c. Depth First Search with Node Selection Heuristic h1b");
-            System.out.println("d. Depth First Search with Node Selection Heuristic h2");
+        while (strategy == null) {
+            System.out.println("1. Breadth First Search");
+            System.out.println("2. Depth First Search");
+            System.out.println("3. Depth First Search with Node Selection Heuristic h1b");
+            System.out.println("4. Depth First Search with Node Selection Heuristic h2");
             System.out.print("Please enter the search strategy: ");
-            char choice = scanner.next().toLowerCase().charAt(0);
 
-            switch (choice) {
-                case 'a' -> strategyChoice = SearchStrategy.BFS;
-                case 'b' -> strategyChoice = SearchStrategy.DFS;
-                case 'c' -> strategyChoice = SearchStrategy.DFS_H1B;
-                case 'd' -> strategyChoice = SearchStrategy.DFS_H2;
-                default -> System.out.println("\nInvalid input. Please enter a valid strategy (a, b, c, or d).\n");
+            if (scanner.hasNextInt()) {
+                int choice = scanner.nextInt();
+                switch (choice) {
+                    case 1 -> strategy = TreeSearch.Strategy.BFS;
+                    case 2 -> strategy = TreeSearch.Strategy.DFS;
+                    case 3 -> strategy = TreeSearch.Strategy.DFS_H1B;
+                    case 4 -> strategy = TreeSearch.Strategy.DFS_H2;
+                    default -> System.out.println("\nInvalid input. Please enter a valid strategy (1, 2, 3 or 4).\n");
+                }
+            } else {
+                scanner.next(); // clear invalid input
             }
         }
 
@@ -150,7 +137,7 @@ public class Main {
             for (Handler handler : rootLogger.getHandlers()) {
                 rootLogger.removeHandler(handler);
             }
-            String format = "%1$tF %1$tT %2$-25s %4$-7s: %5$s%6$s%n";
+            String format = "%1$tF %1$tT %2$-20s %4$-7s: %5$s%6$s%n";
             System.setProperty("java.util.logging.SimpleFormatter.format", format);
             // Create a ConsoleHandler for console output
             ConsoleHandler consoleHandler = new ConsoleHandler();
