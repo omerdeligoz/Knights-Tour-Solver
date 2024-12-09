@@ -16,7 +16,8 @@ JAVA_BIN_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, '../../bin'))
 os.makedirs(JAVA_BIN_DIR, exist_ok=True)
 # Define the test cases as a list of dictionaries
 test_cases = [
-                ['8', 'd', '15'],
+                ['165', 'd', '15'],
+                ['166', 'd', '15'],
 
 #             8, 16, 32, 41, and 52
 #                 ['8', 'a', '15'],   # Out of memory

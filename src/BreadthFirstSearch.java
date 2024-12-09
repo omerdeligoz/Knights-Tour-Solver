@@ -1,10 +1,9 @@
 import java.util.*;
 import java.util.logging.Logger;
 
-public class BreadthFirstSearch implements Strategy {
+public class BreadthFirstSearch {
     Logger logger = Logger.getLogger(BreadthFirstSearch.class.getName());
 
-    @Override
     public boolean solve(Node startNode, long startTime) {
         Queue<Node> frontier = new LinkedList<>();
         Set<Node> visited = new HashSet<>();
@@ -13,14 +12,18 @@ public class BreadthFirstSearch implements Strategy {
         Main.expandedNodes++;
 
         while (!frontier.isEmpty()) {
+            // Check for timeout
             if (System.currentTimeMillis() - startTime > Main.timeLimit * 60 * 1000L) {
                 logger.warning("Timeout: Search exceeded the time limit of " + Main.timeLimit + " minutes.");
                 return false;
             }
+
             Node selectedNode = frontier.poll();
             visited.add(selectedNode);
+            Main.expandedNodes++;
 
             if (isGoal(selectedNode)) {
+                logger.info("Solution found.");
                 // Reconstruct the path from the start node to the goal node
                 Stack<Node> path = new Stack<>();
                 for (Node node = selectedNode; node != null; node = node.parent) {
@@ -28,18 +31,16 @@ public class BreadthFirstSearch implements Strategy {
                 }
                 // Reverse the path to get the correct order from start to goal
                 Collections.reverse(path);
-
-                logger.info("Solution found.");
                 Main.printPath(path);
                 return true;
             }
 
-            Queue<Node> children = expand(selectedNode); // Adjust expand to return List<Node>
+            // Expand the selected node and add its children to the frontier
+            Queue<Node> children = expand(selectedNode);
             for (Node child : children) {
                 if (!visited.contains(child)) {
                     frontier.add(child);
                     child.parent = selectedNode;
-                    Main.expandedNodes++;
                 }
             }
         }
@@ -61,7 +62,9 @@ public class BreadthFirstSearch implements Strategy {
     }
 
     private boolean isValidMove(Node node, int x, int y) {
-        return x >= 1 && x <= Main.SIZE && y >= 1 && y <= Main.SIZE && !hasNode(x, y, node);
+        return x >= 1 && x <= Main.SIZE
+                && y >= 1 && y <= Main.SIZE
+                && !containsNode(x, y, node);
     }
 
     private boolean isGoal(Node selectedNode) {
@@ -73,7 +76,7 @@ public class BreadthFirstSearch implements Strategy {
         return cnt == Main.SIZE * Main.SIZE;
     }
 
-    private boolean hasNode(int x, int y, Node node) {
+    private boolean containsNode(int x, int y, Node node) {
         while (node != null) {
             if (node.x == x && node.y == y) {
                 return true;

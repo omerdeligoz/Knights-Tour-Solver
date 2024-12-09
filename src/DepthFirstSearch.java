@@ -1,9 +1,7 @@
 import java.util.*;
 import java.util.logging.Logger;
 
-class DepthFirstSearch implements Strategy {
-    Logger logger = Logger.getLogger(DepthFirstSearch.class.getName());
-
+class DepthFirstSearch {
     public enum HeuristicType {
         NO,     // No heuristic
         H1B,    // Warnsdorff's method
@@ -11,12 +9,12 @@ class DepthFirstSearch implements Strategy {
     }
 
     private final HeuristicType selectedHeuristic;
+    Logger logger = Logger.getLogger(DepthFirstSearch.class.getName());
 
     public DepthFirstSearch(HeuristicType heuristicType) {
         this.selectedHeuristic = heuristicType;
     }
 
-    @Override
     public boolean solve(Node startNode, long startTime) {
         Map<Node, Stack<Node>> frontier = new HashMap<>();
         Stack<Node> path = new Stack<>();
@@ -26,11 +24,15 @@ class DepthFirstSearch implements Strategy {
         Main.expandedNodes++;
 
         while (!path.isEmpty()) {
+            // Check for timeout
             if (System.currentTimeMillis() - startTime > Main.timeLimit * 60 * 1000L) {
                 logger.warning("Timeout: Search exceeded the time limit of " + Main.timeLimit + " minutes.");
                 return false;
             }
+            // Select the current node
             Node selectedNode = path.peek();
+
+            // Check if the current node is the goal
             if (isGoal(path)) {
                 if (Main.expandedNodes == Main.SIZE * Main.SIZE) {
                     logger.info("Solution found without backtracking.");
@@ -40,16 +42,26 @@ class DepthFirstSearch implements Strategy {
                 Main.printPath(path);
                 return true;
             }
+
+            // Get the children of the current node
             Stack<Node> children = frontier.getOrDefault(selectedNode, new Stack<>());
+
             if (!children.isEmpty()) {
-                Node child = children.pop();
-                if (!visited.contains(child)) {
-                    visited.add(child);
-                    path.push(child);
-                    frontier.put(child, expand(child, path));
+                // Get the next child from the stack
+                Node nextNode = children.pop();
+
+                // Add the child to the path and frontier
+                if (!visited.contains(nextNode)) {
+                    visited.add(nextNode);
+                    path.push(nextNode);
+
+                    // Add the children of the next node to the frontier
+                    frontier.put(nextNode, expand(nextNode, path));
                     Main.expandedNodes++;
                 }
-            } else {
+            }
+            // Backtrack if no children are available (dead-end)
+            else {
                 path.pop();
                 visited.remove(selectedNode);
                 frontier.remove(selectedNode);
@@ -62,47 +74,33 @@ class DepthFirstSearch implements Strategy {
     private Stack<Node> expand(Node node, List<Node> path) {
         List<Node> possibleMoves = new ArrayList<>();
 
-        // Find all valid moves
+        // Try all possible moves from the current node
         for (int[] move : Main.MOVES) {
             int x = node.x + move[0];
             int y = node.y + move[1];
+
+            // Check if the move is valid
             if (isValidMove(path, x, y)) {
                 possibleMoves.add(new Node(x, y, node));
             }
         }
 
+        // If no heuristic is selected, return the moves as is
         if (selectedHeuristic == HeuristicType.NO) {
-            // Convert sorted list to stack (reverse order for stack pop behavior)
-            Stack<Node> children = new Stack<>();
-            for (Node potentialMove : possibleMoves) {
-                children.push(potentialMove);
-            }
-            return children;
+            return convertToStack(possibleMoves);
         }
         // Sort moves based on the selected heuristic
         else if (selectedHeuristic == HeuristicType.H1B) {
-            // H1B: Warnsdorff method - sort by least number of onward moves
-            possibleMoves.sort((a, b) -> {
-                int aOnwardMoves = countOnwardMoves(a, path);
-                int bOnwardMoves = countOnwardMoves(b, path);
-                return Integer.compare(aOnwardMoves, bOnwardMoves);
-            });
+            // H1B: Warnsdorff method - sort by least number of options
+            possibleMoves.sort(Comparator.comparingInt(a -> countPossibleMoves(a, path)));
         } else if (selectedHeuristic == HeuristicType.H2) {
-            // H2: Sort by least onward moves, then distance to corners
-            possibleMoves.sort((a, b) -> {
-                int aOnwardMoves = countOnwardMoves(a, path);
-                int bOnwardMoves = countOnwardMoves(b, path);
-
-                // Primary sort: Least number of onward moves
-                if (aOnwardMoves != bOnwardMoves) {
-                    return Integer.compare(aOnwardMoves, bOnwardMoves);
-                }
-
-                // Secondary sort: Distance to corners when onward moves are equal
-                return compareDistanceToCorners(a, b);
-            });
+            // H2: Sort by least options, then distance to corners
+            possibleMoves.sort(Comparator.comparingInt((Node a) -> countPossibleMoves(a, path)).thenComparing(this::compareDistanceToCorners));
         }
+        return convertToStack(possibleMoves);
+    }
 
+    private static Stack<Node> convertToStack(List<Node> possibleMoves) {
         // Convert sorted list to stack (reverse order for stack pop behavior)
         Stack<Node> children = new Stack<>();
         for (int i = possibleMoves.size() - 1; i >= 0; i--) {
@@ -111,8 +109,8 @@ class DepthFirstSearch implements Strategy {
         return children;
     }
 
-    // Helper method to count possible onward moves from a given node
-    private int countOnwardMoves(Node node, List<Node> path) {
+    // Helper method to count possible moves from the given node
+    private int countPossibleMoves(Node node, List<Node> path) {
         int count = 0;
         for (int[] move : Main.MOVES) {
             int x = node.x + move[0];
@@ -127,16 +125,16 @@ class DepthFirstSearch implements Strategy {
     private static boolean isValidMove(List<Node> path, int x, int y) {
         return x >= 1 && x <= Main.SIZE
                 && y >= 1 && y <= Main.SIZE
-                && !hasNode(path, x, y);
+                && !containsNode(path, x, y);
     }
 
     // Helper method to compare distance to corners
     private int compareDistanceToCorners(Node a, Node b) {
-        // Define corner coordinates for a board of size Main.size
+        // Define corner coordinates
         int[][] corners = {
-                {1, 1},           // bottom-left corner
-                {1, Main.SIZE},   // top-left corner
-                {Main.SIZE, 1},   // bottom-right corner
+                {1, 1},                 // bottom-left corner
+                {1, Main.SIZE},         // top-left corner
+                {Main.SIZE, 1},         // bottom-right corner
                 {Main.SIZE, Main.SIZE}  // top-right corner
         };
 
@@ -152,7 +150,6 @@ class DepthFirstSearch implements Strategy {
             minDistanceB = Math.min(minDistanceB, distB);
         }
 
-        // Prefer the move closer to a corner
         return Integer.compare(minDistanceA, minDistanceB);
     }
 
@@ -160,7 +157,7 @@ class DepthFirstSearch implements Strategy {
         return path.size() == Main.SIZE * Main.SIZE;
     }
 
-    public static boolean hasNode(List<Node> path, int x, int y) {
+    public static boolean containsNode(List<Node> path, int x, int y) {
         for (Node n : path) {
             if (n.x == x && n.y == y) {
                 return true;
