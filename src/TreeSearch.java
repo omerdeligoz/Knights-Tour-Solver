@@ -16,15 +16,15 @@ public class TreeSearch {
         DFS_H2      // Improved heuristic
     }
 
-    private final int[][] MOVES = new int[][]{
-            {-1, -2},
-            {-2, -1},
-            {-2, 1},
-            {-1, 2},
+    private final int[][] directions = new int[][]{
             {1, 2},
             {2, 1},
             {2, -1},
             {1, -2},
+            {-1, -2},
+            {-2, -1},
+            {-2, 1},
+            {-1, 2},
     };
 
     public void solve(Problem problem, Strategy strategy) {
@@ -73,9 +73,9 @@ public class TreeSearch {
         List<Node> possibleMoves = new ArrayList<>();
 
         // Try all possible moves from the current node
-        for (int[] move : MOVES) {
-            int x = node.x + move[0];
-            int y = node.y + move[1];
+        for (int[] direction : directions) {
+            int x = node.x + direction[0];
+            int y = node.y + direction[1];
 
             // Check if the move is valid
             if (isValidMove(node.state, x, y)) {
@@ -113,7 +113,6 @@ public class TreeSearch {
         return Arrays.stream(original).map(boolean[]::clone).toArray(boolean[][]::new);
     }
 
-
     private int compareDistanceToCorners(Node a, Node b) {
         // Define corner coordinates
         int[][] corners = {
@@ -140,9 +139,9 @@ public class TreeSearch {
 
     private int countPossibleMoves(Node node) {
         int count = 0;
-        for (int[] move : MOVES) {
-            int x = node.x + move[0];
-            int y = node.y + move[1];
+        for (int[] direction : directions) {
+            int x = node.x + direction[0];
+            int y = node.y + direction[1];
             if (isValidMove(node.state, x, y)) {
                 count++;
             }
