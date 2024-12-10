@@ -3,34 +3,24 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.logging.*;
 import java.io.FileWriter;
-import java.io.File;
 import java.util.*;
-
 
 public class Main {
 
     private static final Logger logger = Logger.getLogger(Main.class.getName());
 
-
-    public static long expandedNodes = 0;
-    public static long createdNodes = 1;
-
-    public static int startX = 1;
-    public static int startY = 1;
-
-    public static int SIZE;
     public static TreeSearch.Strategy strategy;
-    public static int timeLimit;
+    public static Problem problem = new Problem();
 
-
+ /*
     public static void main(String[] args) {
         configureLogging();
         if (args.length == 0) {
             getInputs();
         } else {
             // Assume that args[0], args[1], args[2] are correctly given
-            SIZE = Integer.parseInt(args[0]);
-            timeLimit = Integer.parseInt(args[2]);
+            problem.size = Integer.parseInt(args[0]);
+            problem.timeLimit = Integer.parseInt(args[2]);
 
             // Parse search strategy
             int choice = Integer.parseInt(args[1]);
@@ -42,11 +32,12 @@ public class Main {
                 default -> throw new IllegalArgumentException("Invalid search strategy: " + args[1]);
             };
         }
-        logger.info("Starting search with board size " + SIZE + ", initial position (" + startX + ", " + startY + "), and strategy " + strategy + " with time limit " + timeLimit + " minutes.");
-        TreeSearch treeSearch = new TreeSearch(strategy);
+        logger.info("Starting search with board size " + problem.size + ", initial position (" + problem.startX + ", " + problem.startY + "), and strategy " + strategy + " with time limit " + problem.timeLimit + " minutes.");
+        TreeSearch treeSearch = new TreeSearch();
         long startTime = System.currentTimeMillis();
+        problem.startTime = startTime;
         try {
-            treeSearch.solve(strategy, startX, startY, startTime);
+            treeSearch.solve(problem, strategy);
         } catch (OutOfMemoryError e) {
             logger.warning("Out of memory error occurred: " + e.getMessage());
         } catch (Exception e) {
@@ -58,12 +49,62 @@ public class Main {
             long seconds = (timeSpent / 1000) % 60;
             long milliseconds = timeSpent % 1000;
             String formattedTime = String.format("%d.%02d.%03d", minutes, seconds, milliseconds);
-            logger.info("Nodes Expanded: " + String.format("%,d", expandedNodes));
-            logger.info("Nodes Created: " + String.format("%,d", createdNodes));
+            logger.info("Nodes Expanded: " + String.format("%,d", problem.expandedNodes));
+            logger.info("Nodes Created: " + String.format("%,d", problem.createdNodes));
             logger.info("Time spent: " + formattedTime);
         }
     }
+*/
 
+    public static void main(String[] args) {
+        configureLogging();
+        if (args.length == 0) {
+            getInputs();
+        } else {
+            // Assume that args[0], args[1], args[2] are correctly given
+            problem.size = Integer.parseInt(args[0]);
+            problem.timeLimit = Integer.parseInt(args[2]);
+
+            // Parse search strategy
+            int choice = Integer.parseInt(args[1]);
+            strategy = switch (choice) {
+                case 1 -> TreeSearch.Strategy.BFS;
+                case 2 -> TreeSearch.Strategy.DFS;
+                case 3 -> TreeSearch.Strategy.DFS_H1B;
+                case 4 -> TreeSearch.Strategy.DFS_H2;
+                default -> throw new IllegalArgumentException("Invalid search strategy: " + args[1]);
+            };
+        }
+
+        logger.info("Problem configuration:\n" +
+                "                                                  Board size: " + problem.size + "\n" +
+                "                                                  Initial position (" + problem.startX + ", " + problem.startY + ")\n" +
+                "                                                  Strategy " + strategy + "\n" +
+                "                                                  Time limit " + problem.timeLimit + " minutes.");
+
+        TreeSearch treeSearch = new TreeSearch();
+        long startTime = System.currentTimeMillis();
+        problem.startTime = startTime;
+        try {
+            treeSearch.solve(problem, strategy);
+        } catch (OutOfMemoryError e) {
+            logger.warning("Out of memory error occurred: " + e.getMessage());
+        } catch (Exception e) {
+            logger.warning("An error occurred: " + e.getMessage());
+        } finally {
+            long endTime = System.currentTimeMillis();
+            long timeSpent = endTime - startTime;
+            long minutes = (timeSpent / 1000) / 60;
+            long seconds = (timeSpent / 1000) % 60;
+            long milliseconds = timeSpent % 1000;
+            String formattedTime = String.format("%d.%02d.%03d", minutes, seconds, milliseconds);
+
+            // Print the results
+            logger.info("Nodes Created  -> " + String.format("%,d", problem.createdNodes));
+            logger.info("Nodes Expanded -> " + String.format("%,d", problem.expandedNodes));
+            logger.info("Time spent     -> " + formattedTime);
+        }
+    }
 
     public static void getInputs() {
         Scanner scanner = new Scanner(System.in);
@@ -71,8 +112,8 @@ public class Main {
         while (true) {
             System.out.print("Please enter the size of the board: ");
             if (scanner.hasNextInt()) {
-                SIZE = scanner.nextInt();
-                if (SIZE > 0) break;
+                problem.size = scanner.nextInt();
+                if (problem.size > 0) break;
             } else {
                 scanner.next(); // clear invalid input
             }
@@ -105,26 +146,12 @@ public class Main {
         while (true) {
             System.out.print("Please enter the time limit in minutes: ");
             if (scanner.hasNextInt()) {
-                timeLimit = scanner.nextInt();
-                if (timeLimit > 0) break;
+                problem.timeLimit = scanner.nextInt();
+                if (problem.timeLimit > 0) break;
             } else {
                 scanner.next(); // clear invalid input
             }
             System.out.println("\nInvalid input. Please enter a positive integer.\n");
-        }
-    }
-
-    public static void printPath(Stack<Node> path) {
-        File file = new File("path.txt");
-        List<String> pathList = new ArrayList<>();
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
-            for (Node node : path) {
-                pathList.add("(" + node.x + "," + node.y + ")");
-            }
-            writer.write(pathList.toString());
-            logger.info("Path found: " + pathList);
-        } catch (IOException e) {
-            logger.warning("Failed to write path to file." + e);
         }
     }
 
@@ -153,7 +180,7 @@ public class Main {
             try (FileWriter writer = new FileWriter("logs/full_logs.log", true)) { // Append mode
                 writer.write(separator);
             }
-            // Create another FileHandler for appending to full_logs.log
+            // Create another FileHandler for appending to full_logs_old.log
             FileHandler fullLogHandler = new FileHandler("logs/full_logs.log", true); // Append mode
             fullLogHandler.setLevel(logLevel);
             fullLogHandler.setFormatter(new SimpleFormatter());

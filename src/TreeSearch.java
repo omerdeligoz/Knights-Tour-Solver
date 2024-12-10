@@ -7,16 +7,16 @@ import java.util.logging.Logger;
 
 public class TreeSearch {
     Logger logger = Logger.getLogger(TreeSearch.class.getName());
+    Problem problem;
 
     public enum Strategy {
         BFS,
         DFS,        // No heuristic
         DFS_H1B,    // Warnsdorff's method
         DFS_H2      // Improved heuristic
-
     }
 
-    public static final int[][] MOVES = new int[][]{
+    private final int[][] MOVES = new int[][]{
             {-1, -2},
             {-2, -1},
             {-2, 1},
@@ -26,24 +26,21 @@ public class TreeSearch {
             {2, -1},
             {1, -2},
     };
-    Strategy strategy;
 
-    public TreeSearch(Strategy strategy) {
-        this.strategy = strategy;
-    }
+    public void solve(Problem problem, Strategy strategy) {
+        this.problem = problem;
 
-    public void solve(Strategy strategy, int startX, int startY, long startTime) {
         Deque<Node> frontier = new ArrayDeque<>();
-        boolean[][] emptyBoard = new boolean[Main.SIZE][Main.SIZE];
-        Node root = new Node(startX, startY, null, emptyBoard, 0);
-        root.board[Main.SIZE - startX][startY - 1] = true;
+        boolean[][] initialState = new boolean[problem.size][problem.size];
+        Node root = new Node(problem.startX, problem.startY, null, initialState, 0);
+        setState(root.state, problem.startX, problem.startY);
         frontier.add(root);
 
         // Search until the frontier is empty
         while (!frontier.isEmpty()) {
             // Check for timeout
-            if (System.currentTimeMillis() - startTime > Main.timeLimit * 60 * 1000L) {
-                logger.warning("Timeout: Search exceeded the time limit of " + Main.timeLimit + " minutes.");
+            if (System.currentTimeMillis() - problem.startTime > problem.timeLimit * 60 * 1000L) {
+                logger.warning("Timeout: Search exceeded the time limit of " + problem.timeLimit + " minutes.");
                 return;
             }
 
@@ -54,7 +51,7 @@ public class TreeSearch {
                 case DFS, DFS_H1B, DFS_H2 -> selectedNode = frontier.pollLast(); // Select the last node in the stack
             }
             assert selectedNode != null;
-            Main.expandedNodes++;
+            problem.expandedNodes++;
 
             // Check if the current node is the goal
             if (isGoalState(selectedNode)) {
@@ -64,14 +61,15 @@ public class TreeSearch {
             }
 
             // Expand the selected node and add its children to the frontier
-            List<Node> children = expand(selectedNode);
+            List<Node> children = expand(selectedNode, strategy);
             frontier.addAll(children);
         }
 
         logger.info("No solution exists.");
     }
 
-    private List<Node> expand(Node node) {
+
+    private List<Node> expand(Node node, Strategy strategy) {
         List<Node> possibleMoves = new ArrayList<>();
 
         // Try all possible moves from the current node
@@ -80,11 +78,11 @@ public class TreeSearch {
             int y = node.y + move[1];
 
             // Check if the move is valid
-            if (isValidMove(node.board, x, y)) {
-                boolean[][] newBoard = deepCopy(node.board);
-                newBoard[Main.SIZE - x][y - 1] = true;
-                possibleMoves.add(new Node(x, y, node, newBoard, node.depth + 1));
-                Main.createdNodes++;
+            if (isValidMove(node.state, x, y)) {
+                boolean[][] newState = deepCopy(node.state);
+                setState(newState, x, y);
+                possibleMoves.add(new Node(x, y, node, newState, node.depth + 1));
+                problem.createdNodes++;
             }
         }
 
@@ -95,17 +93,12 @@ public class TreeSearch {
             }
             // Sort moves based on the selected heuristic
             case DFS_H1B -> {
-                possibleMoves.sort(
-                        Comparator.comparingInt(this::countPossibleMoves)
-                                .reversed()
-                );
+                possibleMoves.sort(Comparator.comparingInt(this::countPossibleMoves).reversed());
                 return possibleMoves;
             }
             case DFS_H2 -> {
-                possibleMoves.sort(
-                        (Comparator.comparingInt(this::countPossibleMoves)
-                                .thenComparing(this::compareDistanceToCorners))
-                                .reversed()
+                possibleMoves.sort((Comparator.comparingInt(this::countPossibleMoves)
+                        .thenComparing(this::compareDistanceToCorners)).reversed()
                 );
                 return possibleMoves;
             }
@@ -113,7 +106,7 @@ public class TreeSearch {
         return possibleMoves;
     }
 
-    public static boolean[][] deepCopy(boolean[][] original) {
+    private boolean[][] deepCopy(boolean[][] original) {
         if (original == null) {
             return null;
         }
@@ -124,10 +117,10 @@ public class TreeSearch {
     private int compareDistanceToCorners(Node a, Node b) {
         // Define corner coordinates
         int[][] corners = {
-                {1, 1},                 // bottom-left corner
-                {1, Main.SIZE},         // bottom-right corner
-                {Main.SIZE, 1},         // top-left corner
-                {Main.SIZE, Main.SIZE}  // top-right corner
+                {1, 1},                       // bottom-left corner
+                {1, problem.size},            // bottom-right corner
+                {problem.size, 1},            // top-left corner
+                {problem.size, problem.size}  // top-right corner
         };
 
         // Calculate minimum Manhattan distance to any corner
@@ -150,17 +143,25 @@ public class TreeSearch {
         for (int[] move : MOVES) {
             int x = node.x + move[0];
             int y = node.y + move[1];
-            if (isValidMove(node.board, x, y)) {
+            if (isValidMove(node.state, x, y)) {
                 count++;
             }
         }
         return count;
     }
 
-    private static boolean isValidMove(boolean[][] board, int x, int y) {
-        return x >= 1 && x <= Main.SIZE
-                && y >= 1 && y <= Main.SIZE
-                && !board[Main.SIZE - x][y - 1];
+    private boolean isValidMove(boolean[][] state, int x, int y) {
+        return x >= 1 && x <= problem.size
+                && y >= 1 && y <= problem.size
+                && !state[problem.size - x][y - 1];
+    }
+
+    private boolean isGoalState(Node selectedNode) {
+        return selectedNode.depth == problem.size * problem.size - 1;
+    }
+
+    private void setState(boolean[][] state, int x, int y) {
+        state[problem.size - x][y - 1] = true;
     }
 
     private void printPath(Node node) {
@@ -178,9 +179,5 @@ public class TreeSearch {
         } catch (IOException e) {
             logger.warning("Failed to write path to file." + e);
         }
-    }
-
-    private boolean isGoalState(Node selectedNode) {
-        return selectedNode.depth == Main.SIZE * Main.SIZE - 1;
     }
 }

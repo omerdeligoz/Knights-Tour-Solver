@@ -1,16 +1,16 @@
 
 public class Node {
+    boolean[][] state;
     Node parent;
-    boolean[][] board;
     int depth;
     int x;
     int y;
 
-    public Node(int x, int y, Node parent, boolean[][] board, int depth) {
+    public Node(int x, int y, Node parent, boolean[][] state, int depth) {
         this.x = x;
         this.y = y;
         this.parent = parent;
-        this.board = board;
+        this.state = state;
         this.depth = depth;
     }
 
