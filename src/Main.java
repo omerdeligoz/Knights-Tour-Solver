@@ -22,7 +22,7 @@ public class Main {
                 "                                                  Strategy " + strategy + "\n" +
                 "                                                  Time limit " + problem.timeLimit + " minutes.");
 
-        TreeSearch treeSearch = new TreeSearch();
+        TreeSearch treeSearch = new TreeSearch(problem);
         long startTime = System.currentTimeMillis();
         problem.startTime = startTime;
         try {

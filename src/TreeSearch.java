@@ -27,12 +27,13 @@ public class TreeSearch {
             {-1, 2},
     };
 
-    public void solve(Problem problem, Strategy strategy) {
+    public TreeSearch(Problem problem) {
         this.problem = problem;
+    }
 
+    public void solve(Problem problem, Strategy strategy) {
         Deque<Node> frontier = new ArrayDeque<>();
-        boolean[][] initialState = new boolean[problem.size][problem.size];
-        Node root = new Node(problem.startX, problem.startY, null, initialState, 0);
+        Node root = new Node(problem.startX, problem.startY, null, new BitSet(problem.size * problem.size), 0);
         setState(root.state, problem.startX, problem.startY);
         frontier.add(root);
 
@@ -79,7 +80,7 @@ public class TreeSearch {
 
             // Check if the move is valid
             if (isValidMove(node.state, x, y)) {
-                boolean[][] newState = deepCopy(node.state);
+                BitSet newState = (BitSet) node.state.clone();
                 setState(newState, x, y);
                 possibleMoves.add(new Node(x, y, node, newState, node.depth + 1));
                 problem.createdNodes++;
@@ -104,13 +105,6 @@ public class TreeSearch {
             }
         }
         return possibleMoves;
-    }
-
-    private boolean[][] deepCopy(boolean[][] original) {
-        if (original == null) {
-            return null;
-        }
-        return Arrays.stream(original).map(boolean[]::clone).toArray(boolean[][]::new);
     }
 
     private int compareDistanceToCorners(Node a, Node b) {
@@ -149,18 +143,18 @@ public class TreeSearch {
         return count;
     }
 
-    private boolean isValidMove(boolean[][] state, int x, int y) {
+    private boolean isValidMove(BitSet state, int x, int y) {
         return x >= 1 && x <= problem.size
                 && y >= 1 && y <= problem.size
-                && !state[problem.size - x][y - 1];
+                && !state.get((x - 1) * problem.size + (y - 1));
     }
 
     private boolean isGoalState(Node selectedNode) {
         return selectedNode.depth == problem.size * problem.size - 1;
     }
 
-    private void setState(boolean[][] state, int x, int y) {
-        state[problem.size - x][y - 1] = true;
+    private void setState(BitSet state, int x, int y) {
+        state.set((x - 1) * problem.size + (y - 1));
     }
 
     private void printPath(Node node) {
