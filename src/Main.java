@@ -1,5 +1,4 @@
 import java.text.SimpleDateFormat;
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.logging.*;
 import java.io.FileWriter;
@@ -12,69 +11,10 @@ public class Main {
     public static TreeSearch.Strategy strategy;
     public static Problem problem = new Problem();
 
- /*
-    public static void main(String[] args) {
-        configureLogging();
-        if (args.length == 0) {
-            getInputs();
-        } else {
-            // Assume that args[0], args[1], args[2] are correctly given
-            problem.size = Integer.parseInt(args[0]);
-            problem.timeLimit = Integer.parseInt(args[2]);
-
-            // Parse search strategy
-            int choice = Integer.parseInt(args[1]);
-            strategy = switch (choice) {
-                case 1 -> TreeSearch.Strategy.BFS;
-                case 2 -> TreeSearch.Strategy.DFS;
-                case 3 -> TreeSearch.Strategy.DFS_H1B;
-                case 4 -> TreeSearch.Strategy.DFS_H2;
-                default -> throw new IllegalArgumentException("Invalid search strategy: " + args[1]);
-            };
-        }
-        logger.info("Starting search with board size " + problem.size + ", initial position (" + problem.startX + ", " + problem.startY + "), and strategy " + strategy + " with time limit " + problem.timeLimit + " minutes.");
-        TreeSearch treeSearch = new TreeSearch();
-        long startTime = System.currentTimeMillis();
-        problem.startTime = startTime;
-        try {
-            treeSearch.solve(problem, strategy);
-        } catch (OutOfMemoryError e) {
-            logger.warning("Out of memory error occurred: " + e.getMessage());
-        } catch (Exception e) {
-            logger.warning("An error occurred: " + e.getMessage());
-        } finally {
-            long endTime = System.currentTimeMillis();
-            long timeSpent = endTime - startTime;
-            long minutes = (timeSpent / 1000) / 60;
-            long seconds = (timeSpent / 1000) % 60;
-            long milliseconds = timeSpent % 1000;
-            String formattedTime = String.format("%d.%02d.%03d", minutes, seconds, milliseconds);
-            logger.info("Nodes Expanded: " + String.format("%,d", problem.expandedNodes));
-            logger.info("Nodes Created: " + String.format("%,d", problem.createdNodes));
-            logger.info("Time spent: " + formattedTime);
-        }
-    }
-*/
 
     public static void main(String[] args) {
         configureLogging();
-        if (args.length == 0) {
-            getInputs();
-        } else {
-            // Assume that args[0], args[1], args[2] are correctly given
-            problem.size = Integer.parseInt(args[0]);
-            problem.timeLimit = Integer.parseInt(args[2]);
-
-            // Parse search strategy
-            int choice = Integer.parseInt(args[1]);
-            strategy = switch (choice) {
-                case 1 -> TreeSearch.Strategy.BFS;
-                case 2 -> TreeSearch.Strategy.DFS;
-                case 3 -> TreeSearch.Strategy.DFS_H1B;
-                case 4 -> TreeSearch.Strategy.DFS_H2;
-                default -> throw new IllegalArgumentException("Invalid search strategy: " + args[1]);
-            };
-        }
+        getInputs();
 
         logger.info("Problem configuration:\n" +
                 "                                                  Board size: " + problem.size + "\n" +
@@ -159,11 +99,13 @@ public class Main {
         try {
             // Get the root logger
             Logger rootLogger = LogManager.getLogManager().getLogger("");
-            Level logLevel = Level.INFO; // Change to Level.INFO for less detailed logs
-            // Remove default handlers (optional, to avoid duplicate logs)
+            Level logLevel = Level.INFO;
+
             for (Handler handler : rootLogger.getHandlers()) {
                 rootLogger.removeHandler(handler);
             }
+
+            // Set the log format
             String format = "%1$tF %1$tT %2$-20s %4$-7s: %5$s%6$s%n";
             System.setProperty("java.util.logging.SimpleFormatter.format", format);
             // Create a ConsoleHandler for console output
@@ -180,7 +122,7 @@ public class Main {
             try (FileWriter writer = new FileWriter("logs/full_logs.log", true)) { // Append mode
                 writer.write(separator);
             }
-            // Create another FileHandler for appending to full_logs_old.log
+            // Create FileHandler
             FileHandler fullLogHandler = new FileHandler("logs/full_logs.log", true); // Append mode
             fullLogHandler.setLevel(logLevel);
             fullLogHandler.setFormatter(new SimpleFormatter());
