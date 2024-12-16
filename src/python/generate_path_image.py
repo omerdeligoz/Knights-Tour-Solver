@@ -23,26 +23,20 @@ def generate_path_picture(coordinates):
     min_x, max_x = min(x_coords), max(x_coords)
     min_y, max_y = min(y_coords), max(y_coords)
 
-    # Dynamic figure sizing
     # Calculate the range of coordinates
     x_range = max_x - min_x + 1
     y_range = max_y - min_y + 1
 
-    # Define base figure size and scaling factor
-    base_size = 6  # Base figure size in inches
-    max_size = 15  # Maximum figure size to prevent extremely large images
-    min_size = 4  # Minimum figure size
+    # Dynamic figure sizing
+    scaling_factor = 0.5  # Each unit in the grid adds this many inches
+    base_size = 6  # Base size for a small grid
+    width = base_size + x_range * scaling_factor
+    height = base_size + y_range * scaling_factor
 
-    # Calculate figure size based on coordinate range
-    width = min(max(min_size, base_size * (x_range / 10)), max_size)
-    height = min(max(min_size, base_size * (y_range / 10)), max_size)
-
-    # Set up the plot with improved styling
-    plt.style.use('bmh')  # Use a built-in Matplotlib style
+    plt.style.use('bmh')  # Use a clean style
     fig, ax = plt.subplots(figsize=(width, height), facecolor='#f0f0f0')
     ax.set_facecolor('#f9f9f9')
 
-    # Configure axes
     ax.set_xlim(min_x - 1, max_x + 1)
     ax.set_ylim(min_y - 1, max_y + 1)
     ax.set_xticks(range(min_x - 1, max_x + 2))
@@ -50,24 +44,19 @@ def generate_path_picture(coordinates):
     ax.grid(True, linestyle='--', linewidth=0.5, color='#d0d0d0')
     ax.set_aspect('equal', adjustable='box')
 
-    # Enhanced title and labels
-    ax.set_title("Path Visualization", fontsize=16, fontweight='bold', pad=20)
-    ax.set_xlabel("X Coordinate", fontsize=12)
-    ax.set_ylabel("Y Coordinate", fontsize=12)
+    ax.set_title("Knight's Path Visualization", fontsize=16, fontweight='bold', pad=20)
 
-    # Draw the chessboard pattern with softer colors
+    # Chessboard pattern
     for x in range(min_x, max_x + 1):
         for y in range(min_y, max_y + 1):
             color = '#ffffff' if (x + y) % 2 == 0 else '#808080'
             square = Rectangle((x - 0.5, y - 0.5), 1, 1, color=color, alpha=0.5, zorder=0)
             ax.add_patch(square)
 
-    # Prepare for color gradient
     def generate_color_gradient(n):
         """Generate a color gradient for annotations."""
         colors = []
         for i in range(n):
-            # Create a smooth color transition
             hue = i / n
             saturation = 0.8
             lightness = 0.5
@@ -76,10 +65,6 @@ def generate_path_picture(coordinates):
         return colors
 
     color_gradient = generate_color_gradient(len(coordinates))
-
-    # Plot the path
-    ax.plot(x_coords, y_coords, marker='o', color='#1E90FF', linestyle='-', linewidth=2, markersize=10, alpha=0.7)
-    ax.plot([x_coords[-1]], [y_coords[-1]], marker='o', color='#FF4500', markersize=15)
 
     # Annotate each point with a colored number
     for i, (y, x) in enumerate(coordinates):
@@ -100,19 +85,17 @@ def generate_path_picture(coordinates):
             (coordinates[i][1], coordinates[i][0]),
             (coordinates[i + 1][1], coordinates[i + 1][0]),
             arrowstyle='->',
-            color='#555555',
+            color='#333333',
             mutation_scale=15,
-            linewidth=1.5,
-            alpha=0.6
+            linewidth=2,
+            alpha=0.8
         )
         ax.add_patch(arrow)
 
-    # Enhanced figure styling
-    plt.tight_layout()
 
-    # Save the picture
-    plt.savefig("path_visualization.png")
-    plt.show()
+    plt.tight_layout()
+    plt.savefig("path_visualization.png", dpi=300)  # Higher DPI for clearer large images
+#     plt.show()
 
 
 def is_valid_knight_move(start, end):
@@ -124,20 +107,15 @@ def is_valid_knight_move(start, end):
 
 def check_coordinates(coordinates):
     """Check if the input coordinates are valid."""
-    # Check if each coordinate exists only once
     if len(coordinates) != len(set(coordinates)):
         return False
-
-    # Check if each consecutive coordinate forms a valid knight move
     for i in range(len(coordinates) - 1):
         if not is_valid_knight_move(coordinates[i], coordinates[i + 1]):
             return False
-
     return True
 
 
 if __name__ == "__main__":
-    # File path input
     file_path = "../../path.txt"
     try:
         coordinates = read_coordinates(file_path)
