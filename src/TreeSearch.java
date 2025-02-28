@@ -9,13 +9,15 @@ public class TreeSearch {
     Logger logger = Logger.getLogger(TreeSearch.class.getName());
     Problem problem;
 
+    // Enum for different search strategies
     public enum Strategy {
-        BFS,
-        DFS,        // No heuristic
-        DFS_H1B,    // Warnsdorff's method
-        DFS_H2      // Improved heuristic
+        BFS,        // Breadth-First Search
+        DFS,        // Depth-First Search (No heuristic)
+        DFS_H1B,    // Depth-First Search with Warnsdorff's method heuristic
+        DFS_H2      // Depth-First Search with improved heuristic
     }
 
+    // Possible knight moves in a chessboard
     private final int[][] directions = new int[][]{
             {1, 2},
             {2, 1},
@@ -27,11 +29,14 @@ public class TreeSearch {
             {-1, 2},
     };
 
+    // Constructor to initialize the TreeSearch with a problem instance
     public TreeSearch(Problem problem) {
         this.problem = problem;
     }
 
+    // Method to solve the problem using the specified strategy
     public void solve(Problem problem, Strategy strategy) {
+        // Initialize the frontier with the root node
         Deque<Node> frontier = new ArrayDeque<>();
         Node root = new Node(problem.startX, problem.startY, null, new BitSet(problem.size * problem.size), 0);
         setState(root.state, problem.startX, problem.startY);
@@ -70,6 +75,7 @@ public class TreeSearch {
     }
 
 
+    // Method to expand a node and generate its children based on the strategy
     private List<Node> expand(Node node, Strategy strategy) {
         List<Node> possibleMoves = new ArrayList<>();
 
@@ -87,12 +93,11 @@ public class TreeSearch {
             }
         }
 
+        // Sort moves based on the selected heuristic
         switch (strategy) {
-            // If no heuristic is selected, return the moves as is
             case BFS, DFS -> {
-                return possibleMoves;
+                return possibleMoves; // No sorting needed for BFS and DFS
             }
-            // Sort moves based on the selected heuristic
             case DFS_H1B -> {
                 possibleMoves.sort(Comparator.comparingInt(this::countPossibleMoves).reversed());
                 return possibleMoves;
@@ -107,6 +112,7 @@ public class TreeSearch {
         return possibleMoves;
     }
 
+    // Method to compare the distance of two nodes to the nearest corner
     private int compareDistanceToCorners(Node a, Node b) {
         // Define corner coordinates
         int[][] corners = {
@@ -131,6 +137,7 @@ public class TreeSearch {
         return Integer.compare(minDistanceA, minDistanceB);
     }
 
+    // Method to count the number of possible moves from a node
     private int countPossibleMoves(Node node) {
         int count = 0;
         for (int[] direction : directions) {
@@ -143,20 +150,24 @@ public class TreeSearch {
         return count;
     }
 
+    // Method to check if a move is valid
     private boolean isValidMove(BitSet state, int x, int y) {
         return x >= 1 && x <= problem.size
                 && y >= 1 && y <= problem.size
                 && !state.get((x - 1) * problem.size + (y - 1));
     }
 
+    // Method to check if the current node is the goal state
     private boolean isGoalState(Node selectedNode) {
         return selectedNode.depth == problem.size * problem.size - 1;
     }
 
+    // Method to set the state of a node
     private void setState(BitSet state, int x, int y) {
         state.set((x - 1) * problem.size + (y - 1));
     }
 
+    // Method to print the path from the start node to the goal node
     private void printPath(Node node) {
         File file = new File("path.txt");
         List<String> pathList = new ArrayList<>();
@@ -166,6 +177,7 @@ public class TreeSearch {
             node = node.parent;
         }
 
+        // Write the path to a file
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
             writer.write(pathList.toString());
             logger.info("Path: " + pathList);
